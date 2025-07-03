@@ -15,6 +15,7 @@
   "prepared_by",
   "section_break_pjvl",
   "payment_summary",
+  "payment_summary_data",
   "section_break_dioh",
   "amended_from"
  ],
@@ -82,13 +83,19 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "payment_summary_data",
+   "fieldtype": "Text Editor",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-03 18:07:58.023172",
+ "modified": "2025-07-03 19:41:52.815900",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",

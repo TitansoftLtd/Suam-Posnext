@@ -17,7 +17,7 @@ def get_payment_summary(posting_date):
             "docstatus": 1,
             "posting_date": posting_date
         },
-        fields=["name", "user"] # We need 'name' to link to child table and 'user' for summary
+        fields=["name", "user"]
     )
 
     summary = defaultdict(lambda: defaultdict(float))
@@ -34,7 +34,7 @@ def get_payment_summary(posting_date):
         # 3. Aggregate the amounts by user and mode of payment
         for p in payments:
             # Ensure closing_amount is treated as a float, defaulting to 0 if None or empty
-            summary[entry["user"]][p["mode_of_payment"]] += float(p["closing_amount"] or 0)
+            summary[entry["user"]][p["mode_of_payment"]] += float(p["closing_amount"])
 
     # 4. Return the aggregated summary
     return summary
