@@ -16,6 +16,8 @@
   "section_break_pjvl",
   "payment_summary",
   "payment_summary_data",
+  "section_break_cbss",
+  "closed_pos_closing_entries",
   "section_break_dioh",
   "amended_from"
  ],
@@ -89,13 +91,23 @@
    "fieldtype": "Text Editor",
    "hidden": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_cbss",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "closed_pos_closing_entries",
+   "fieldtype": "Table",
+   "label": "Closed POS Closing Entries",
+   "options": "Closed POS Closing Entry Details"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-03 19:41:52.815900",
+ "modified": "2025-07-04 09:50:47.892877",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
