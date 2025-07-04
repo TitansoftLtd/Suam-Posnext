@@ -129,6 +129,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "banked_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -171,7 +172,7 @@
    "link_fieldname": "custom_cashier_pos_closing_entry"
   }
  ],
- "modified": "2025-07-04 16:08:02.011476",
+ "modified": "2025-07-04 16:38:33.361623",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
