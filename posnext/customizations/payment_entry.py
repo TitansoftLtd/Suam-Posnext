@@ -27,9 +27,4 @@ def update_banked_amount(doc, method):
             "unbanked_amount": unbanked_amount
         })
 
-        # (Optional) Add a comment to the Chief Cashier Closing Entry for audit trail
         frappe.db.commit()
-        frappe.get_doc("Chief Cashier Closing Entry", chief_entry).add_comment(
-            "Info",
-            f"Banked amount updated to {frappe.utils.fmt_money(banked_amount)}. Unbanked amount is now {frappe.utils.fmt_money(unbanked_amount)}."
-        )
