@@ -151,7 +151,13 @@ doc_events = {
 	},
 	"POS Profile": {
 		"validate": "posnext.doc_events.pos_profile.validate_pf"
-	}
+	},
+    "Payment Entry": {
+        "on_submit": "posnext.customizations.payment_entry.update_banked_amount",
+        "on_cancel": "posnext.customizations.payment_entry.update_banked_amount",
+    }
+
+
 
 }
 

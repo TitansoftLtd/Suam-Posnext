@@ -6,8 +6,6 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
         }
 
         if (frm.doc.docstatus === 0) {
-            // The "Get Closing Entry" button will now primarily serve as a manual trigger
-            // if the user wants to re-fetch after initial load or changes.
             frm.add_custom_button('Get Closing Entry', async function () {
                 if (!frm.doc.posting_date) {
                     frappe.msgprint("Please select a Posting Date first.");
@@ -20,17 +18,24 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
 
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button('Create Payment Transfer', function () {
-                frappe.new_doc('Payment Entry', {
-                    payment_type: 'Internal Transfer',
-                    posting_date: frm.doc.posting_date
+            frappe.model.with_doctype('Payment Entry', () => {
+                const doc = frappe.model.get_new_doc('Payment Entry');
+                doc.payment_type = 'Internal Transfer';
+                doc.posting_date = frm.doc.posting_date;
+
+                frappe.set_route('Form', 'Payment Entry', doc.name);
+
+                // Delay setting the field until after routing
+                frappe.after_ajax(() => {
+                frappe.model.set_value('Payment Entry', doc.name, 'custom_cashier_pos_closing_entry', frm.doc.name);
                 });
             });
+            });
         }
+
     },
 
-    // New or modified event handler for the posting_date field
     posting_date: function(frm) {
-        // Clear existing data first
         frm.clear_table("closed_pos_closing_entries");
         frm.refresh_field("closed_pos_closing_entries");
 
@@ -39,15 +44,28 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
             frm.set_value("payment_summary_data", "");
         }
 
-        // Fetch data if a posting date is selected
         if (frm.doc.posting_date) {
             frm.set_value("posting_time", frappe.datetime.now_time());
             fetch_closing_entries_and_summary(frm);
         }
+    },
+
+    banked_amount: function(frm) {
+        if (frm.doc.total_amount !== undefined && frm.doc.total_amount !== null) {
+            const unbanked = frm.doc.total_amount - frm.doc.banked_amount;
+            frm.set_value("unbanked_amount", unbanked);
+        }
+    },
+
+    total_amount: function(frm) {
+        if (frm.doc.banked_amount !== undefined && frm.doc.banked_amount !== null) {
+            const unbanked = frm.doc.total_amount - frm.doc.banked_amount;
+            frm.set_value("unbanked_amount", unbanked);
+        }
     }
 });
 
-// Helper function to encapsulate the fetching logic
+// Helper function
 async function fetch_closing_entries_and_summary(frm) {
     // Fetch and populate Closed POS Closing Entries table
     await frappe.call({
@@ -121,12 +139,23 @@ async function fetch_closing_entries_and_summary(frm) {
                 html += `<td style="text-align: right;">${format_currency(grand_total)}</td></tr>`;
                 html += `</tbody></table>`;
 
+                // Set summary HTML and total_amount
                 frm.set_value("payment_summary_data", html);
+                frm.set_value("total_amount", grand_total);
                 frm.fields_dict.payment_summary.$wrapper.html(html);
+
+                // Set unbanked_amount even if zero
+                if (frm.doc.banked_amount !== undefined && frm.doc.banked_amount !== null) {
+                    const unbanked = grand_total - frm.doc.banked_amount;
+                    frm.set_value("unbanked_amount", unbanked);
+                }
+
                 frm.save();
             } else {
                 frm.fields_dict.payment_summary.$wrapper.empty();
                 frm.set_value("payment_summary_data", "");
+                frm.set_value("total_amount", 0);
+                frm.set_value("unbanked_amount", 0);
             }
         }
     });
