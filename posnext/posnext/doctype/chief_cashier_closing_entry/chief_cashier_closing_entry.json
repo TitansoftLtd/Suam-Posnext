@@ -24,6 +24,7 @@
   "unbanked_amount",
   "section_break_cbss",
   "closed_pos_closing_entries",
+  "connections_tab",
   "section_break_dioh",
   "amended_from"
  ],
@@ -144,13 +145,24 @@
    "in_list_view": 1,
    "label": "Unbanked Amount",
    "read_only": 1
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2025-07-04 14:08:32.070894",
+ "links": [
+  {
+   "link_doctype": "Payment Entry",
+   "link_fieldname": "custom_cashier_pos_closing_entry"
+  }
+ ],
+ "modified": "2025-07-04 15:00:35.305973",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
