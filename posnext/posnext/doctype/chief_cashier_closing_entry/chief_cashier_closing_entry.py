@@ -37,7 +37,7 @@ def get_payment_summary(posting_date):
         filters={
             "docstatus": 1,
             "posting_date": posting_date,
-            "custom_closed": 0  # <--- Added this filter
+            "custom_closed": 0
         },
         fields=["name", "user"]
     )
