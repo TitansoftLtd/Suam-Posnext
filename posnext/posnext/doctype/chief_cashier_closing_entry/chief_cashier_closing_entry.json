@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:CCE-{posting_date}",
+ "autoname": "naming_series:",
  "creation": "2025-03-25 16:20:07.852686",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -13,6 +13,7 @@
   "company",
   "column_break_xclu",
   "prepared_by",
+  "naming_series",
   "section_break_pjvl",
   "payment_summary",
   "payment_summary_data",
@@ -151,6 +152,14 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "default": "CCE-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "CCE-.YYYY.-"
   }
  ],
  "grid_page_length": 50,
@@ -162,11 +171,11 @@
    "link_fieldname": "custom_cashier_pos_closing_entry"
   }
  ],
- "modified": "2025-07-04 15:00:35.305973",
+ "modified": "2025-07-04 16:08:02.011476",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
- "naming_rule": "Expression",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

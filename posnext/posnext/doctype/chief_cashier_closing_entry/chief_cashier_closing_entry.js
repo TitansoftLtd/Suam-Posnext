@@ -21,14 +21,13 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
             frappe.model.with_doctype('Payment Entry', () => {
                 const doc = frappe.model.get_new_doc('Payment Entry');
                 doc.payment_type = 'Internal Transfer';
-                doc.posting_date = frm.doc.posting_date;
-
+                doc.custom_cashier_pos_closing_entry = frm.doc.name;
                 frappe.set_route('Form', 'Payment Entry', doc.name);
 
                 // Delay setting the field until after routing
-                frappe.after_ajax(() => {
-                frappe.model.set_value('Payment Entry', doc.name, 'custom_cashier_pos_closing_entry', frm.doc.name);
-                });
+                // frappe.after_ajax(() => {
+                // frappe.model.set_value('Payment Entry', doc.name, 'custom_cashier_pos_closing_entry', frm.doc.name);
+                // });
             });
             });
         }
