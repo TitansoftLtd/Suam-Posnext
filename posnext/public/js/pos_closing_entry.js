@@ -14,6 +14,9 @@ frappe.ui.form.on('POS Closing Entry', {
             frm.clear_table("custom_payment_reconc");
             frm.refresh_field("custom_payment_reconc");
 
+            frm.clear_table("pos_transactions");
+            frm.refresh_field("pos_transactions");
+
             frm.set_value("custom_grand_totals", 0);
             frm.set_value("custom_net_totals", 0);
             frm.set_value("custom_total_taxes", 0);
@@ -90,6 +93,7 @@ frappe.ui.form.on('POS Closing Entry', {
                     const balances = res.message.balance_details || [];
 
                     frm.clear_table("custom_payment_reconc");
+                    frm.clear_table("pos_transactions");
 
                     balances.forEach(balance => {
                         const row = frm.add_child("custom_payment_reconc");
@@ -122,6 +126,7 @@ frappe.ui.form.on('POS Closing Entry', {
 
     validate: function (frm) {
         calculate_total_taxes(frm);
+        frm.clear_table("pos_transactions");
     }
 });
 
