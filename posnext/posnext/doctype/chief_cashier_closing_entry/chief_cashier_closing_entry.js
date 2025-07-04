@@ -22,7 +22,8 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
             frm.add_custom_button('Create Payment Transfer', function () {
                 frappe.new_doc('Payment Entry', {
                     payment_type: 'Internal Transfer',
-                    posting_date: frm.doc.posting_date
+                    posting_date: frm.doc.posting_date,
+                    custom_cashier_pos_closing_entry: frm.doc.name
                 });
             });
         }

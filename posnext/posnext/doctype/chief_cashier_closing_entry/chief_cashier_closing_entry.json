@@ -16,6 +16,12 @@
   "section_break_pjvl",
   "payment_summary",
   "payment_summary_data",
+  "section_break_mzhi",
+  "total_amount",
+  "column_break_djkx",
+  "banked_amount",
+  "column_break_savp",
+  "unbanked_amount",
   "section_break_cbss",
   "closed_pos_closing_entries",
   "section_break_dioh",
@@ -103,13 +109,46 @@
    "fieldtype": "Table",
    "label": "Closed POS Closing Entries",
    "options": "Closed POS Closing Entry Details"
+  },
+  {
+   "fieldname": "section_break_mzhi",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_djkx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "banked_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Banked Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_savp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "unbanked_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Unbanked Amount",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-04 10:39:52.211228",
+ "modified": "2025-07-04 13:27:14.777160",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
