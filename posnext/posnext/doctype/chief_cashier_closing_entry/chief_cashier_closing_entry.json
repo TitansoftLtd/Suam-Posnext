@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:CCE-{posting_date}",
+ "autoname": "naming_series:",
  "creation": "2025-03-25 16:20:07.852686",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -13,6 +13,7 @@
   "company",
   "column_break_xclu",
   "prepared_by",
+  "naming_series",
   "section_break_pjvl",
   "payment_summary",
   "payment_summary_data",
@@ -24,6 +25,7 @@
   "unbanked_amount",
   "section_break_cbss",
   "closed_pos_closing_entries",
+  "connections_tab",
   "section_break_dioh",
   "amended_from"
  ],
@@ -127,6 +129,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "banked_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -144,17 +147,36 @@
    "in_list_view": 1,
    "label": "Unbanked Amount",
    "read_only": 1
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "default": "CCE-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "CCE-.YYYY.-"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2025-07-04 14:08:32.070894",
+ "links": [
+  {
+   "link_doctype": "Payment Entry",
+   "link_fieldname": "custom_cashier_pos_closing_entry"
+  }
+ ],
+ "modified": "2025-07-04 16:38:33.361623",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
- "naming_rule": "Expression",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
