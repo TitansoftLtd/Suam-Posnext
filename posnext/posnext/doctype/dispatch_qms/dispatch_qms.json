@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "allow_copy": 1,
+ "allow_rename": 1,
+ "creation": "2025-07-05 12:01:29.943876",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "dispatch_status_container"
+ ],
+ "fields": [
+  {
+   "fieldname": "dispatch_status_container",
+   "fieldtype": "HTML",
+   "options": "<style>\n  .dispatch-section {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 20px;\n    margin-top: 20px;\n  }\n\n  .dispatch-card {\n    flex: 1 1 45%;\n    min-width: 300px;\n  }\n\n  .dispatch-block {\n    min-height: 300px;\n    background: #fff;\n    border: 1px solid #ddd;\n    border-radius: 6px;\n    padding: 15px;\n  }\n\n  .dispatch-title {\n    border-bottom: 2px solid;\n    padding-bottom: 5px;\n    margin-bottom: 10px;\n  }\n\n  .processing-title {\n    color: #e2631b;\n    border-color: #e2631b;\n  }\n\n  .ready-title {\n    color: green;\n    border-color: green;\n  }\n</style>\n\n<div class=\"dispatch-section\">\n  <div class=\"dispatch-card\">\n    <h3 class=\"dispatch-title processing-title\">Processing</h3>\n    <div class=\"processing-block dispatch-block\">Loading Processing Dispatches...</div>\n  </div>\n  <div class=\"dispatch-card\">\n    <h3 class=\"dispatch-title ready-title\">Ready To Collect</h3>\n    <div class=\"ready-block dispatch-block\">Loading Ready To Collect Dispatches...</div>\n  </div>\n</div>"
+  }
+ ],
+ "grid_page_length": 50,
+ "hide_toolbar": 1,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-07-05 12:25:23.637499",
+ "modified_by": "Administrator",
+ "module": "Posnext",
+ "name": "Dispatch QMS",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
