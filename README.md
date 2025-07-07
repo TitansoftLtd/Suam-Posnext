@@ -23,9 +23,6 @@ POSNext is integrated with ERPNext’s default POS module. To begin using POSNex
 
 ## 🔧 Setting Up POSNext
 
-### 📥 Installation
-- **Available on Frappe Cloud Marketplace**
-
 ### ⚙️ Configuration
 
 1. **Access POS Profile Settings**: Navigate to the POS Profile settings within ERPNext.
@@ -117,10 +114,7 @@ POSNext is integrated with ERPNext’s default POS module. To begin using POSNex
 
 ---
 
-## ☁️ Deployment Options
-
-### 🚀 Managed Hosting
-Deploy POSNext on **(https://frappecloud.com/marketplace/apps/posnext)** for a hassle-free experience. Frappe Cloud handles installation, updates, security, and support.
+## ☁️ Deployment
 
 ### 🔧 Self-Hosting
 To set up POSNext on your own server:
