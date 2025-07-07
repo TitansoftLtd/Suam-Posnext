@@ -125,7 +125,7 @@ Deploy POSNext on **(https://frappecloud.com/marketplace/apps/posnext)** for a h
 ### 🔧 Self-Hosting
 To set up POSNext on your own server:
 
-bench get-app branch version-15 https://github.com/exvas/posnext.git
+bench get-app branch version-15 https://github.com/TitansoftLtd/Suam-Posnext.git
 
 bench setup requirements
 
@@ -137,8 +137,6 @@ bench --site [your.site.name] install-app posnext
 
 bench --site [your.site.name] migrate
 
-## 🤝 Contributing
-We welcome contributions! (https://github.com/exvas/POSNext/pulls)
 
 ## 📜 License
 POSNext is released under the [MIT License](https://github.com/posnext/app/blob/develop/LICENSE).
