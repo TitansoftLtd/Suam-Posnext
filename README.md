@@ -23,9 +23,6 @@ POSNext is integrated with ERPNext’s default POS module. To begin using POSNex
 
 ## 🔧 Setting Up POSNext
 
-### 📥 Installation
-- **Available on Frappe Cloud Marketplace**
-
 ### ⚙️ Configuration
 
 1. **Access POS Profile Settings**: Navigate to the POS Profile settings within ERPNext.
@@ -117,15 +114,12 @@ POSNext is integrated with ERPNext’s default POS module. To begin using POSNex
 
 ---
 
-## ☁️ Deployment Options
-
-### 🚀 Managed Hosting
-Deploy POSNext on **(https://frappecloud.com/marketplace/apps/posnext)** for a hassle-free experience. Frappe Cloud handles installation, updates, security, and support.
+## ☁️ Deployment
 
 ### 🔧 Self-Hosting
 To set up POSNext on your own server:
 
-bench get-app branch version-15 https://github.com/exvas/posnext.git
+bench get-app branch version-15 https://github.com/TitansoftLtd/Suam-Posnext.git
 
 bench setup requirements
 
@@ -137,8 +131,6 @@ bench --site [your.site.name] install-app posnext
 
 bench --site [your.site.name] migrate
 
-## 🤝 Contributing
-We welcome contributions! (https://github.com/exvas/POSNext/pulls)
 
 ## 📜 License
 POSNext is released under the [MIT License](https://github.com/posnext/app/blob/develop/LICENSE).
