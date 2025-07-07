@@ -656,105 +656,86 @@ find_available_opening_entry() {
 		this.page.set_indicator(this.pos_profile, "blue");
 	}
 
-	async on_cart_update(args) {
-		// frappe.dom.freeze();
-		console.log("Updating Cart")
-		let item_row = undefined;
-		try {
-			let { field, value, item } = args;
-			item_row = this.get_item_from_frm(item);
-			const item_row_exists = !$.isEmptyObject(item_row);
-	
-			const from_selector = field === 'qty' && value === "+1";
-			if (from_selector)
-				value = flt(item_row.stock_qty) + flt(value);
-	
-			if (item_row_exists) {
-				if (field === 'qty')
-					value = flt(value);
-	
-				if (['qty', 'conversion_factor'].includes(field) && value > 0 && !this.allow_negative_stock) {
-					const qty_needed = field === 'qty' ? value * item_row.conversion_factor : item_row.qty * value;
-					// await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
-				}
-	
-				if (this.is_current_item_being_edited(item_row) || from_selector) {
-					await frappe.model.set_value(item_row.doctype, item_row.name, field, value)
-					// this.update_cart_html(item_row);
-				}
-	
-			} else {
-				if (!this.frm.doc.customer && !this.settings.custom_mobile_number_based_customer){
-					return this.raise_customer_selection_alert();
-				}
-				frappe.flags.ignore_company_party_validation = true
-				const { item_code, batch_no, serial_no, rate, uom, valuation_rate, custom_item_uoms, custom_logical_rack } = item;
-				if (!item_code)
-					return;
-	
-				if (this.settings.custom_product_bundle) {
-					const product_bundle = await this.get_product_bundle(item_code);
-					if (product_bundle && Array.isArray(product_bundle.items)) {
-						const bundle_items = product_bundle.items.map(bundle_item => ({
-							item_code: bundle_item.item_code,
-							qty: bundle_item.qty * value,
-							rate: bundle_item.rate,
-							uom: bundle_item.uom,
-							custom_bundle_id: product_bundle.name
-						}));
-	
-						for (const bundle_item of bundle_items) {
-							const bundle_item_row = this.frm.add_child('items', bundle_item);
-							await this.trigger_new_item_events(bundle_item_row);
-						}
-	
-						this.update_cart_html();
-						return;
-					}
-				}
-	
-				const new_item = { item_code, batch_no, rate, uom, [field]: value };
-				if(value){
-					new_item['qty'] = value
-				}
-				if (serial_no) {
-					await this.check_serial_no_availablilty(item_code, this.frm.doc.set_warehouse, serial_no);
-					new_item['serial_no'] = serial_no;
-				}
-	
-				if (field === 'serial_no')
-					new_item['qty'] = value.split(`\n`).length || 0;
-				item_row = this.frm.add_child('items', new_item);
-	
-				await this.trigger_new_item_events(item_row);
-				// item_row['rate'] = rate
-				// item_row['valuation_rate'] = valuation_rate;
-				// item_row['custom_valuation_rate'] = valuation_rate;
-				item_row['custom_item_uoms'] = custom_item_uoms;
-				item_row['custom_logical_rack'] = custom_logical_rack;
-				// this.update_cart_html(item_row);
-				if (this.item_details.$component.is(':visible'))
-					this.edit_item_details_of(item_row);
-	
-				if (this.check_serial_batch_selection_needed(item_row) && !this.item_details.$component.is(':visible'))
-					this.edit_item_details_of(item_row);
-			}
-	
-		} catch (error) {
-			console.log(error);
-		} finally {
-			// frappe.dom.unfreeze();
-	
-			var total_incoming_rate = 0
-			this.frm.doc.items.forEach(item => {
-				total_incoming_rate += (parseFloat(item.valuation_rate) * item.qty)
-			});
-			this.item_selector.update_total_incoming_rate(total_incoming_rate)
-	
-			return item_row; // eslint-disable-line no-unsafe-finally
-		}
-	}
+	  async on_cart_update(args) {
+        console.log("Updating Cart");
+        let item_row = undefined;
+        try {
+            let { field, value, item } = args;
+            item_row = this.get_item_from_frm(item);
+            const item_row_exists = !$.isEmptyObject(item_row);
 
+            const from_selector = field === 'qty' && value === "+1";
+            if (from_selector) value = flt(item_row.stock_qty) + 1;
+
+            if (item_row_exists) {
+                if (field === 'qty') value = flt(value);
+
+                if (['qty', 'conversion_factor'].includes(field) && value > 0 && !this.allow_negative_stock) {
+                    const qty_needed = field === 'qty' ? value * item_row.conversion_factor : item_row.qty * value;
+                }
+
+                if (this.is_current_item_being_edited(item_row) || from_selector) {
+                    await frappe.model.set_value(item_row.doctype, item_row.name, field, value);
+                    this.update_cart_html(item_row);
+                }
+
+            } else {
+                if (!this.frm.doc.customer && !this.settings.custom_mobile_number_based_customer) {
+                    return this.raise_customer_selection_alert();
+                }
+
+                frappe.flags.ignore_company_party_validation = true;
+                let { item_code, batch_no, serial_no, rate, uom, valuation_rate, custom_item_uoms, custom_logical_rack } = item;
+
+                if (!rate || flt(rate) === 0) {
+                    const res = await frappe.call({
+                        method: 'erpnext.stock.get_item_details.get_item_price',
+                        args: { item_code, price_list: this.settings.selling_price_list }
+                    });
+                    rate = flt(res.message.price_list_rate) || 0;
+                }
+
+                uom = uom || item.stock_uom || 'Nos';
+                let qty = (field === 'qty' && value) ? flt(value) : 1;
+                if (field === 'serial_no') qty = value.split(`\n`).length || 0;
+
+                if (serial_no) {
+                    await this.check_serial_no_availablilty(item_code, this.frm.doc.set_warehouse, serial_no);
+                }
+
+                const new_item = {
+                    item_code,
+                    batch_no,
+                    serial_no,
+                    rate,
+                    uom,
+                    qty,
+                    amount: flt(rate) * flt(qty),
+                    custom_item_uoms,
+                    custom_logical_rack
+                };
+
+                item_row = this.frm.add_child('items', new_item);
+                await this.trigger_new_item_events(item_row);
+                this.frm.refresh_field("items");
+                this.update_cart_html(item_row);
+
+                if (this.item_details.$component.is(':visible')) this.edit_item_details_of(item_row);
+                if (this.check_serial_batch_selection_needed(item_row) && !this.item_details.$component.is(':visible')) this.edit_item_details_of(item_row);
+            }
+
+        } catch (error) {
+            console.log(error);
+        } finally {
+            let total_incoming_rate = 0;
+            this.frm.doc.items.forEach(item => {
+                total_incoming_rate += (flt(item.valuation_rate) * flt(item.qty));
+            });
+            this.item_selector.update_total_incoming_rate(total_incoming_rate);
+            return item_row;
+        }
+    }
+    
 	raise_customer_selection_alert() {
 		frappe.dom.unfreeze();
 		frappe.show_alert({
