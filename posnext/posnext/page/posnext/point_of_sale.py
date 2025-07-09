@@ -432,21 +432,19 @@ def check_customer_exists(mobile_number):
 
 @frappe.whitelist()
 def create_customer_with_name(mobile_number, customer_name):
-    """Create a new customer with mobile number as ID and provided name"""
+    """Create ONE customer with mobile number as ID and provided name"""
     try:
-        # Check if customer already exists
         if frappe.db.exists("Customer", mobile_number):
             frappe.throw(f"Customer with mobile number {mobile_number} already exists")
         
-        # Get default customer group and territory
         customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "Individual"
         territory = frappe.db.get_single_value("Selling Settings", "territory") or "Rest Of The World"
         
-        # Create customer document
+        # Create ONE customer with mobile number as ID
         customer_doc = frappe.get_doc({
             "doctype": "Customer",
-            "name": mobile_number,  # Use mobile number as the customer ID
-            "customer_name": customer_name,
+            "name": mobile_number,  # Mobile number as customer ID
+            "customer_name": customer_name,  # Actual name
             "customer_group": customer_group,
             "territory": territory,
             "mobile_no": mobile_number
@@ -455,14 +453,10 @@ def create_customer_with_name(mobile_number, customer_name):
         customer_doc.insert(ignore_permissions=True)
         frappe.db.commit()
         
-        return {
-            "success": True,
-            "customer_id": mobile_number,
-            "customer_name": customer_name
-        }
+        return {"success": True, "customer_id": mobile_number}
         
     except Exception as e:
-        frappe.log_error(f"Error creating customer with name: {str(e)}")
+        frappe.log_error(f"Error creating customer: {str(e)}")
         frappe.throw(f"Failed to create customer: {str(e)}")
 
 # Keep your existing create_customer method for backward compatibility, but enhance it slightly

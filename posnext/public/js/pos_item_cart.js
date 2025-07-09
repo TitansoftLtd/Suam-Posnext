@@ -342,37 +342,41 @@ this.highlight_checkout_btn(true);
         }
     });
 
-
 this.$component.on('click', '.checkout-btn-held', function() {
-        if ($(this).attr('style').indexOf('--blue-500') == -1) return;
-        if (!cur_frm.doc.items.length) {
-            frappe.throw("Cannot save empty invoice");
-            return;
-        }
+    if ($(this).attr('style').indexOf('--blue-500') == -1) return;
+    if (!cur_frm.doc.items.length) {
+        frappe.throw("Cannot save empty invoice");
+        return;
+    }
 
-        console.log('Hold button clicked');
+    console.log('Hold button clicked');
 
-        if (!cur_frm.doc.customer && me.mobile_number_based_customer) {
-            const mobile_dialog = me.create_mobile_dialog(function(values) {
-                me.create_customer_and_proceed(values['mobile_number']).then(() => {
-                    me.show_secret_key_popup_for_hold();
-                }).catch(error => {
-                    console.error('Error creating customer for hold:', error);
-                    frappe.show_alert({
-                        message: __('Failed to create customer. Please try again.'),
-                        indicator: 'red'
-                    });
+    if (!cur_frm.doc.customer && me.mobile_number_based_customer) {
+        const mobile_dialog = me.create_mobile_dialog(function(values) {
+            // NO VALIDATION OR CUSTOMER CREATION HERE - already handled in dialog
+            // Just proceed with existing mobile number
+            const mobile_number = values['mobile_number'];
+            
+            me.create_customer_and_proceed(mobile_number).then(() => {
+                me.show_secret_key_popup_for_hold();
+            }).catch(error => {
+                console.error('Error selecting customer for hold:', error);
+                frappe.show_alert({
+                    message: __('Failed to select customer. Please try again.'),
+                    indicator: 'red'
                 });
             });
-            mobile_dialog.show();
-        } else {
-            if (!cur_frm.doc.customer && !me.mobile_number_based_customer) {
-                frappe.throw("Please select a customer before holding the invoice");
-                return;
-            }
-            me.show_secret_key_popup_for_hold();
+        });
+        mobile_dialog.show();
+    } else {
+        if (!cur_frm.doc.customer && !me.mobile_number_based_customer) {
+            frappe.throw("Please select a customer before holding the invoice");
+            return;
         }
-    });
+        me.show_secret_key_popup_for_hold();
+    }
+});
+
 		this.$component.on('click', '.checkout-btn-order', () => {
 			this.events.toggle_recent_order();
 		});
@@ -430,7 +434,7 @@ this.$component.on('click', '.checkout-btn-held', function() {
 		});
 	}
 
-	create_mobile_dialog(callback) {
+create_mobile_dialog(callback) {
     const me = this;
     let dialog = new frappe.ui.Dialog({
         title: 'Enter Mobile Number',
@@ -490,6 +494,7 @@ this.$component.on('click', '.checkout-btn-held', function() {
             const mobile_number = values['mobile_number'] || '';
             const required_length = me.settings.custom_mobile_number_length || 10;
             
+            // VALIDATION (moved from callback to here)
             if (!mobile_number) {
                 frappe.throw(__("Please enter a mobile number"));
                 return;
@@ -513,7 +518,7 @@ this.$component.on('click', '.checkout-btn-held', function() {
                 });
 
                 if (customer_exists.message) {
-                    // Customer exists, proceed with callback
+                    // Customer exists, proceed with callback (no creation needed)
                     dialog.hide();
                     callback(values);
                 } else {
@@ -531,7 +536,7 @@ this.$component.on('click', '.checkout-btn-held', function() {
         }
     });
 
-    // Bind numpad events efficiently
+    // Numpad event bindings (same as before)
     const numpad = dialog.wrapper.find(".custom-numpad");
     const numbers = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "zero"];
     
@@ -550,6 +555,7 @@ this.$component.on('click', '.checkout-btn-held', function() {
 
     return dialog;
 }
+
 show_customer_name_dialog(mobile_number, original_callback, original_values) {
     const me = this;
     
@@ -580,7 +586,7 @@ show_customer_name_dialog(mobile_number, original_callback, original_values) {
             }
 
             try {
-                // Create customer with both mobile number and name
+                // THIS IS THE ONLY PLACE WHERE CUSTOMER CREATION HAPPENS
                 await frappe.call({
                     method: "posnext.posnext.page.posnext.point_of_sale.create_customer_with_name",
                     args: { 
@@ -599,7 +605,7 @@ show_customer_name_dialog(mobile_number, original_callback, original_values) {
                     indicator: 'green'
                 });
                 
-                // Call the original callback with the original values
+                // Call the original callback - customer now exists
                 original_callback(original_values);
                 
             } catch (error) {
@@ -613,7 +619,6 @@ show_customer_name_dialog(mobile_number, original_callback, original_values) {
         secondary_action_label: __('Back'),
         secondary_action: function() {
             name_dialog.hide();
-            // Show the mobile dialog again
             const mobile_dialog = me.create_mobile_dialog(original_callback);
             mobile_dialog.show();
             mobile_dialog.set_value('mobile_number', mobile_number);
@@ -621,12 +626,10 @@ show_customer_name_dialog(mobile_number, original_callback, original_values) {
     });
     
     name_dialog.show();
-    // Focus on the customer name field
     setTimeout(() => {
         name_dialog.get_field('customer_name').set_focus();
     }, 500);
 }
-
 
 
 show_secret_key_popup_for_hold() {
@@ -850,26 +853,12 @@ create_secret_dialog(callback) {
     return dialog;
 }
 
-async create_customer_and_proceed(mobile_number, next_action) {
+async create_customer_and_proceed(mobile_number) {
     const me = this;
     try {
-        // Check if customer exists first
-        const customer_exists = await frappe.call({
-            method: "posnext.posnext.page.posnext.point_of_sale.check_customer_exists",
-            args: { mobile_number: mobile_number }
-        });
-
-        if (!customer_exists.message) {
-            // Customer doesn't exist, this shouldn't happen if we came from the proper flow
-            // But handle it gracefully by using the old create_customer method
-            await frappe.call({
-                method: "posnext.posnext.page.posnext.point_of_sale.create_customer",
-                args: { customer: mobile_number },
-                freeze: true,
-                freeze_message: "Creating Customer..."
-            });
-        }
-
+        // At this point, customer should already exist (created by name dialog or already existed)
+        // Just select the customer and update details
+        
         const frm = me.events.get_frm();
         frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'customer', mobile_number);
         
@@ -878,12 +867,12 @@ async create_customer_and_proceed(mobile_number, next_action) {
         me.events.customer_details_updated(me.customer_info);
         me.update_customer_section();
         
-        if (next_action) await next_action(mobile_number);
     } catch (error) {
         frappe.show_alert({ message: __("Failed to process customer"), indicator: 'red' });
         throw error;
     }
 }
+
 
 async handle_successful_hold(invoice_name, creator_name) {
     console.log('handle_successful_hold called with:', invoice_name, creator_name);
