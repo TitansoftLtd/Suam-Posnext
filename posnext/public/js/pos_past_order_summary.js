@@ -82,9 +82,9 @@ posnext.PointOfSale.PastOrderSummary = class {
 		status === 'Return' && (indicator_color = 'grey');
 
 		return `<div class="left-section">
-					<div class="customer-name">${doc.customer}</div>
+					<div class="customer-name">${doc.customer_name}</div>
 					<div class="customer-email">${this.customer_email}</div>
-					<div class="cashier">${__('Sold by')}: ${doc.created_by_name}</div>
+					<div class="cashier">${__('Sold by')}: ${doc.created_by_name || doc.owner}</div>
 				</div>
 				<div class="right-section">
 					<div class="paid-amount">${format_currency(doc.paid_amount, doc.currency)}</div>

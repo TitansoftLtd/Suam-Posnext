@@ -1160,60 +1160,87 @@ async handle_successful_hold(invoice_name, creator_name) {
 		}
 	}
 
-	update_customer_section() {
-		const me = this;
-		const { customer, email_id='', mobile_no='', image } = this.customer_info || {};
+update_customer_section() {
+    const me = this;
+    const frm = me.events.get_frm();
+    
+    // Get customer info from both customer_info and the sales invoice form
+    const { customer, email_id='', mobile_no='', image } = this.customer_info || {};
+    
+    // Get customer_name from the Sales Invoice form if available
+    const customer_name_from_invoice = frm && frm.doc ? frm.doc.customer_name : '';
+    const display_customer_name = customer_name_from_invoice || customer || '';
 
-		if (customer) {
-			this.$customer_section.html(
-				`<div class="customer-details">
-					<div class="customer-display">
-						${this.get_customer_image()}
-						<div class="customer-name-desc">
-							<div class="customer-name">${customer}</div>
-							${get_customer_description()}
-						</div>
-						<div class="reset-customer-btn" data-customer="${escape(customer)}">
-							<svg width="32" height="32" viewBox="0 0 14 14" fill="none">
-								<path d="M4.93764 4.93759L7.00003 6.99998M9.06243 9.06238L7.00003 6.99998M7.00003 6.99998L4.93764 9.06238L9.06243 4.93759" stroke="#8D99A6"/>
-							</svg>
-						</div>
-					</div>
-				</div>`
-			);
-			if(this.mobile_number_based_customer){
-				this.$customer_section.find('.reset-customer-btn').css('display', 'none');
-			} else {
-				this.$customer_section.find('.reset-customer-btn').css('display', 'flex');
-			}
-		} else {
-			// reset customer selector
-			this.reset_customer_selector();
-		}
+    if (customer) {
+        this.$customer_section.html(
+            `<div class="customer-details">
+                <div class="customer-display">
+                    ${this.get_customer_image()}
+                    <div class="customer-name-desc">
+                        <div class="customer-name">${display_customer_name}</div>
+                        ${get_customer_description()}
+                    </div>
+                    <div class="reset-customer-btn" data-customer="${escape(customer)}">
+                        <svg width="32" height="32" viewBox="0 0 14 14" fill="none">
+                            <path d="M4.93764 4.93759L7.00003 6.99998M9.06243 9.06238L7.00003 6.99998M7.00003 6.99998L4.93764 9.06238L9.06243 4.93759" stroke="#8D99A6"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>`
+        );
+        if(this.mobile_number_based_customer){
+            this.$customer_section.find('.reset-customer-btn').css('display', 'none');
+        } else {
+            this.$customer_section.find('.reset-customer-btn').css('display', 'flex');
+        }
+    } else {
+        // reset customer selector
+        this.reset_customer_selector();
+    }
 
-		function get_customer_description() {
-			if (!email_id && !mobile_no) {
-				return `<div class="customer-desc">${__('Click to add email / phone')}</div>`;
-			} else if (email_id && !mobile_no) {
-				return `<div class="customer-desc">${email_id}</div>`;
-			} else if (mobile_no && !email_id) {
-				return `<div class="customer-desc">${mobile_no}</div>`;
-			} else {
-				return `<div class="customer-desc">${email_id} - ${mobile_no}</div>`;
-			}
-		}
-
-	}
+    function get_customer_description() {
+        // Show customer ID and contact info
+        const customer_id_info = customer !== display_customer_name ? `ID: ${customer}` : '';
+        
+        if (!email_id && !mobile_no && !customer_id_info) {
+            return `<div class="customer-desc">${__('Click to add email / phone')}</div>`;
+        } else {
+            let desc_parts = [];
+            
+            // Add customer ID if different from name
+            if (customer_id_info) {
+                desc_parts.push(customer_id_info);
+            }
+            
+            // Add email if available
+            if (email_id) {
+                desc_parts.push(email_id);
+            }
+            
+            // Add mobile if available
+            if (mobile_no) {
+                desc_parts.push(mobile_no);
+            }
+            
+            return `<div class="customer-desc">${desc_parts.join(' • ')}</div>`;
+        }
+    }
+}
 
 	get_customer_image() {
-		const { customer, image } = this.customer_info || {};
-		if (image) {
-			return `<div class="customer-image"><img src="${image}" alt="${image}""></div>`;
-		} else {
-			return `<div class="customer-image customer-abbr">${frappe.get_abbr(customer)}</div>`;
-		}
-	}
-
+    const frm = this.events.get_frm();
+    const { customer, image } = this.customer_info || {};
+    
+    // Get customer_name from the Sales Invoice form if available
+    const customer_name_from_invoice = frm && frm.doc ? frm.doc.customer_name : '';
+    const display_name = customer_name_from_invoice || customer || '';
+    
+    if (image) {
+        return `<div class="customer-image"><img src="${image}" alt="${display_name}"></div>`;
+    } else {
+        return `<div class="customer-image customer-abbr">${frappe.get_abbr(display_name)}</div>`;
+    }
+}
 	update_totals_section(frm) {
 		if (!frm) frm = this.events.get_frm();
 		frm.cscript.calculate_taxes_and_totals();
