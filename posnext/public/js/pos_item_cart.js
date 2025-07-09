@@ -308,114 +308,71 @@ this.highlight_checkout_btn(true);
 		}
 
 
-		this.$component.on('click', '.checkout-btn', async function() {
-    if ($(this).attr('style').indexOf('--blue-500') == -1) return;
-    if ($(this).attr('class').indexOf('checkout-btn-held') !== -1) return;
-    if ($(this).attr('class').indexOf('checkout-btn-order') !== -1) return;
-    
-    console.log('Checkout button clicked');
-    try {
-        if (!cur_frm.doc.customer && me.mobile_number_based_customer) {
-            const dialog = me.create_mobile_dialog(async function(values) {
-                if (values['mobile_number'].length !== me.settings.custom_mobile_number_length) {
-                    frappe.throw("Mobile Number Length is " + me.settings.custom_mobile_number_length.toString());
+    this.$component.on('click', '.checkout-btn', async function() {
+        if ($(this).attr('style').indexOf('--blue-500') == -1) return;
+        if ($(this).attr('class').indexOf('checkout-btn-held') !== -1) return;
+        if ($(this).attr('class').indexOf('checkout-btn-order') !== -1) return;
+        
+        console.log('Checkout button clicked');
+        try {
+            if (!cur_frm.doc.customer && me.mobile_number_based_customer) {
+                const dialog = me.create_mobile_dialog(async function(values) {
+                    try {
+                        await me.create_customer_and_proceed(values['mobile_number']);
+                        await me.events.checkout();
+                        me.toggle_checkout_btn(false);
+                        me.allow_discount_change && me.$add_discount_elem.removeClass("d-none");
+                    } catch (error) {
+                        console.error('Error in mobile dialog checkout:', error);
+                    }
+                });
+                dialog.show();
+            } else {
+                if (!cur_frm.doc.customer && !me.mobile_number_based_customer) {
+                    frappe.throw("Please Select a customer and add items first");
                     return;
                 }
-                
-                try {
-                    await me.create_customer_and_proceed(values['mobile_number']);
-                    await me.events.checkout();
-                    me.toggle_checkout_btn(false);
-                    me.allow_discount_change && me.$add_discount_elem.removeClass("d-none");
-                    dialog.hide();
-                } catch (error) {
-                    console.error('Error in mobile dialog checkout:', error);
-                }
-            });
-            dialog.show();
-        } else {
-            if (!cur_frm.doc.customer && !me.mobile_number_based_customer) {
-                frappe.throw("Please Select a customer and add items first");
-                return;
+                await me.events.checkout();
+                me.toggle_checkout_btn(false);
+                me.allow_discount_change && me.$add_discount_elem.removeClass("d-none");
             }
-            await me.events.checkout();
-            me.toggle_checkout_btn(false);
-            me.allow_discount_change && me.$add_discount_elem.removeClass("d-none");
+        } catch (error) {
+            console.error('Error in checkout:', error);
+            frappe.msgprint(__('Error during checkout. Please try again.'));
         }
-    } catch (error) {
-        console.error('Error in checkout:', error);
-        frappe.msgprint(__('Error during checkout. Please try again.'));
-    }
-});
+    });
+
 
 this.$component.on('click', '.checkout-btn-held', function() {
-    if ($(this).attr('style').indexOf('--blue-500') == -1) return;
-    if (!cur_frm.doc.items.length) {
-        frappe.throw("Cannot save empty invoice");
-        return;
-    }
+        if ($(this).attr('style').indexOf('--blue-500') == -1) return;
+        if (!cur_frm.doc.items.length) {
+            frappe.throw("Cannot save empty invoice");
+            return;
+        }
 
-    console.log('Hold button clicked');
+        console.log('Hold button clicked');
 
-    
-    if (!cur_frm.doc.customer && me.mobile_number_based_customer) {
-        const mobile_dialog = me.create_mobile_dialog(function(values) {
-            
-            const mobile_number = values['mobile_number'] || '';
-            const required_length = me.settings.custom_mobile_number_length || 10;
-            
-            if (!mobile_number) {
-                frappe.throw(__("Please enter a mobile number"));
-                return;
-            }
-            
-            if (mobile_number.length !== required_length) {
-                frappe.throw(__("Mobile Number must be exactly {0} digits long. Currently entered: {1} digits", [required_length, mobile_number.length]));
-                return;
-            }
-            
-            if (!/^\d+$/.test(mobile_number)) {
-                frappe.throw(__("Mobile Number must contain only digits"));
-                return;
-            }
-            
-           
-            frappe.call({
-                method: "posnext.posnext.page.posnext.point_of_sale.create_customer",
-                args: { customer: mobile_number },
-                freeze: true,
-                freeze_message: "Creating Customer....",
-                callback: function() {
-                    const frm = me.events.get_frm();
-                    frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'customer', mobile_number);
-                    frm.script_manager.trigger('customer', frm.doc.doctype, frm.doc.name).then(() => {
-                        frappe.run_serially([
-                            () => me.fetch_customer_details(mobile_number),
-                            () => me.events.customer_details_updated(me.customer_info),
-                            () => me.update_customer_section(),
-                            () => me.show_secret_key_popup_for_hold() 
-                        ]);
-                    });
-                    mobile_dialog.hide();
-                },
-                error: function(r) {
-                    console.error('Error creating customer:', r);
+        if (!cur_frm.doc.customer && me.mobile_number_based_customer) {
+            const mobile_dialog = me.create_mobile_dialog(function(values) {
+                me.create_customer_and_proceed(values['mobile_number']).then(() => {
+                    me.show_secret_key_popup_for_hold();
+                }).catch(error => {
+                    console.error('Error creating customer for hold:', error);
                     frappe.show_alert({
                         message: __('Failed to create customer. Please try again.'),
                         indicator: 'red'
                     });
-                }
+                });
             });
-        });
-        mobile_dialog.show();
-    } else {
-        if (!cur_frm.doc.customer && !me.mobile_number_based_customer) {
-            frappe.throw("Please select a customer before holding the invoice");
-            return;
+            mobile_dialog.show();
+        } else {
+            if (!cur_frm.doc.customer && !me.mobile_number_based_customer) {
+                frappe.throw("Please select a customer before holding the invoice");
+                return;
+            }
+            me.show_secret_key_popup_for_hold();
         }
-        me.show_secret_key_popup_for_hold();
-    }
-});
+    });
 		this.$component.on('click', '.checkout-btn-order', () => {
 			this.events.toggle_recent_order();
 		});
@@ -473,8 +430,7 @@ this.$component.on('click', '.checkout-btn-held', function() {
 		});
 	}
 
-	
-create_mobile_dialog(callback) {
+	create_mobile_dialog(callback) {
     const me = this;
     let dialog = new frappe.ui.Dialog({
         title: 'Enter Mobile Number',
@@ -530,7 +486,49 @@ create_mobile_dialog(callback) {
         ],
         size: 'small',
         primary_action_label: 'Continue',
-        primary_action: callback
+        primary_action: async function(values) {
+            const mobile_number = values['mobile_number'] || '';
+            const required_length = me.settings.custom_mobile_number_length || 10;
+            
+            if (!mobile_number) {
+                frappe.throw(__("Please enter a mobile number"));
+                return;
+            }
+            
+            if (mobile_number.length !== required_length) {
+                frappe.throw(__("Mobile Number must be exactly {0} digits long. Currently entered: {1} digits", [required_length, mobile_number.length]));
+                return;
+            }
+            
+            if (!/^\d+$/.test(mobile_number)) {
+                frappe.throw(__("Mobile Number must contain only digits"));
+                return;
+            }
+
+            // Check if customer exists with this mobile number
+            try {
+                const customer_exists = await frappe.call({
+                    method: "posnext.posnext.page.posnext.point_of_sale.check_customer_exists",
+                    args: { mobile_number: mobile_number }
+                });
+
+                if (customer_exists.message) {
+                    // Customer exists, proceed with callback
+                    dialog.hide();
+                    callback(values);
+                } else {
+                    // Customer doesn't exist, ask for customer name
+                    dialog.hide();
+                    me.show_customer_name_dialog(mobile_number, callback, values);
+                }
+            } catch (error) {
+                console.error('Error checking customer existence:', error);
+                frappe.show_alert({
+                    message: __('Error checking customer. Please try again.'),
+                    indicator: 'red'
+                });
+            }
+        }
     });
 
     // Bind numpad events efficiently
@@ -552,6 +550,85 @@ create_mobile_dialog(callback) {
 
     return dialog;
 }
+show_customer_name_dialog(mobile_number, original_callback, original_values) {
+    const me = this;
+    
+    const name_dialog = new frappe.ui.Dialog({
+        title: __('Enter Customer Details'),
+        fields: [
+            {
+                label: __('Mobile Number'),
+                fieldname: 'display_mobile',
+                fieldtype: 'Data',
+                read_only: 1,
+                default: mobile_number
+            },
+            {
+                label: __('Customer Name'),
+                fieldname: 'customer_name',
+                fieldtype: 'Data',
+                reqd: 1,
+                description: __('This mobile number is not registered. Please enter the customer name.')
+            }
+        ],
+        size: 'small',
+        primary_action_label: __('Create Customer'),
+        primary_action: async function(values) {
+            if (!values.customer_name || values.customer_name.trim() === '') {
+                frappe.throw(__("Please enter a customer name"));
+                return;
+            }
+
+            try {
+                // Create customer with both mobile number and name
+                await frappe.call({
+                    method: "posnext.posnext.page.posnext.point_of_sale.create_customer_with_name",
+                    args: { 
+                        mobile_number: mobile_number,
+                        customer_name: values.customer_name.trim()
+                    },
+                    freeze: true,
+                    freeze_message: __("Creating Customer...")
+                });
+
+                name_dialog.hide();
+                
+                // Show success message
+                frappe.show_alert({
+                    message: __('Customer "{0}" created successfully!', [values.customer_name.trim()]),
+                    indicator: 'green'
+                });
+                
+                // Call the original callback with the original values
+                original_callback(original_values);
+                
+            } catch (error) {
+                console.error('Error creating customer with name:', error);
+                frappe.show_alert({
+                    message: __('Failed to create customer. Please try again.'),
+                    indicator: 'red'
+                });
+            }
+        },
+        secondary_action_label: __('Back'),
+        secondary_action: function() {
+            name_dialog.hide();
+            // Show the mobile dialog again
+            const mobile_dialog = me.create_mobile_dialog(original_callback);
+            mobile_dialog.show();
+            mobile_dialog.set_value('mobile_number', mobile_number);
+        }
+    });
+    
+    name_dialog.show();
+    // Focus on the customer name field
+    setTimeout(() => {
+        name_dialog.get_field('customer_name').set_focus();
+    }, 500);
+}
+
+
+
 show_secret_key_popup_for_hold() {
     const me = this;
     const secret_dialog = me.create_secret_dialog(function(values) {
@@ -773,16 +850,25 @@ create_secret_dialog(callback) {
     return dialog;
 }
 
-
 async create_customer_and_proceed(mobile_number, next_action) {
     const me = this;
     try {
-        await frappe.call({
-            method: "posnext.posnext.page.posnext.point_of_sale.create_customer",
-            args: { customer: mobile_number },
-            freeze: true,
-            freeze_message: "Processing..."
+        // Check if customer exists first
+        const customer_exists = await frappe.call({
+            method: "posnext.posnext.page.posnext.point_of_sale.check_customer_exists",
+            args: { mobile_number: mobile_number }
         });
+
+        if (!customer_exists.message) {
+            // Customer doesn't exist, this shouldn't happen if we came from the proper flow
+            // But handle it gracefully by using the old create_customer method
+            await frappe.call({
+                method: "posnext.posnext.page.posnext.point_of_sale.create_customer",
+                args: { customer: mobile_number },
+                freeze: true,
+                freeze_message: "Creating Customer..."
+            });
+        }
 
         const frm = me.events.get_frm();
         frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'customer', mobile_number);
