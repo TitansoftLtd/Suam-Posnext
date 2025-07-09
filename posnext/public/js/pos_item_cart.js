@@ -1198,33 +1198,25 @@ update_customer_section() {
         this.reset_customer_selector();
     }
 
-    function get_customer_description() {
-        // Show customer ID and contact info
-        const customer_id_info = customer !== display_customer_name ? `ID: ${customer}` : '';
+function get_customer_description() {
+    if (!email_id && !mobile_no) {
+        return `<div class="customer-desc">${__('Click to add email / phone')}</div>`;
+    } else {
+        let desc_parts = [];
         
-        if (!email_id && !mobile_no && !customer_id_info) {
-            return `<div class="customer-desc">${__('Click to add email / phone')}</div>`;
-        } else {
-            let desc_parts = [];
-            
-            // Add customer ID if different from name
-            if (customer_id_info) {
-                desc_parts.push(customer_id_info);
-            }
-            
-            // Add email if available
-            if (email_id) {
-                desc_parts.push(email_id);
-            }
-            
-            // Add mobile if available
-            if (mobile_no) {
-                desc_parts.push(mobile_no);
-            }
-            
-            return `<div class="customer-desc">${desc_parts.join(' • ')}</div>`;
+        // Add email if available
+        if (email_id) {
+            desc_parts.push(email_id);
         }
+        
+        // Add mobile if available
+        if (mobile_no) {
+            desc_parts.push(mobile_no);
+        }
+        
+        return `<div class="customer-desc">${desc_parts.join(' • ')}</div>`;
     }
+}
 }
 
 	get_customer_image() {
