@@ -29,7 +29,7 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
         }
 
         // Update latest banked/unbanked amount
-        if (frm.doc.name) {
+        if (!frm.is_new() && frm.doc.docstatus === 1) {
             update_banked_and_unbanked(frm);
         }
     },
