@@ -420,16 +420,74 @@ def get_pos_profile_data(pos_profile):
 
 
 @frappe.whitelist()
-def create_customer(customer):
-	customer_check = frappe.db.sql(""" SELECT * FROM `tabCustomer` WHERE name=%s""",customer,as_dict=1)
-	if len(customer_check) == 0:
-		obj = {
-			"doctype": "Customer",
-			"customer_name": customer
-		}
+def check_customer_exists(mobile_number):
+    """Check if a customer exists with the given mobile number as customer ID"""
+    try:
+        if frappe.db.exists("Customer", mobile_number):
+            return True
+        return False
+    except Exception as e:
+        frappe.log_error(f"Error checking customer existence: {str(e)}")
+        return False
 
-		frappe.get_doc(obj).insert()
-		frappe.db.commit()
+@frappe.whitelist()
+def create_customer_with_name(mobile_number, customer_name):
+    """Create ONE customer with mobile number as ID and provided name"""
+    try:
+        if frappe.db.exists("Customer", mobile_number):
+            frappe.throw(f"Customer with mobile number {mobile_number} already exists")
+        
+        customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "Individual"
+        territory = frappe.db.get_single_value("Selling Settings", "territory") or "Rest Of The World"
+        
+        # Create ONE customer with mobile number as ID
+        customer_doc = frappe.get_doc({
+            "doctype": "Customer",
+            "name": mobile_number,  # Mobile number as customer ID
+            "customer_name": customer_name,  # Actual name
+            "customer_group": customer_group,
+            "territory": territory,
+            "mobile_no": mobile_number
+        })
+        
+        customer_doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+        
+        return {"success": True, "customer_id": mobile_number}
+        
+    except Exception as e:
+        frappe.log_error(f"Error creating customer: {str(e)}")
+        frappe.throw(f"Failed to create customer: {str(e)}")
+
+# Keep your existing create_customer method for backward compatibility, but enhance it slightly
+@frappe.whitelist()
+def create_customer(customer):
+    """Enhanced version of your existing create_customer method"""
+    try:
+        customer_check = frappe.db.sql(""" SELECT * FROM `tabCustomer` WHERE name=%s""", customer, as_dict=1)
+        if len(customer_check) == 0:
+            # Get default customer group and territory
+            customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "Individual"
+            territory = frappe.db.get_single_value("Selling Settings", "territory") or "Rest Of The World"
+            
+            obj = {
+                "doctype": "Customer",
+                "name": customer,
+                "customer_name": customer,  # Use mobile number as name for backward compatibility
+                "customer_group": customer_group,
+                "territory": territory,
+                "mobile_no": customer
+            }
+
+            frappe.get_doc(obj).insert(ignore_permissions=True)
+            frappe.db.commit()
+            
+        return {"success": True, "customer_id": customer}
+        
+    except Exception as e:
+        frappe.log_error(f"Error in create_customer: {str(e)}")
+        frappe.throw(f"Failed to create customer: {str(e)}")
+
 
 
 import frappe
