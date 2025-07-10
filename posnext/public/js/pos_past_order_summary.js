@@ -82,9 +82,9 @@ posnext.PointOfSale.PastOrderSummary = class {
 		status === 'Return' && (indicator_color = 'grey');
 
 		return `<div class="left-section">
-					<div class="customer-name">${doc.customer}</div>
+					<div class="customer-name">${doc.customer_name}</div>
 					<div class="customer-email">${this.customer_email}</div>
-					<div class="cashier">${__('Sold by')}: ${doc.created_by_name}</div>
+					<div class="cashier">${__('Sold by')}: ${doc.created_by_name || doc.owner}</div>
 				</div>
 				<div class="right-section">
 					<div class="paid-amount">${format_currency(doc.paid_amount, doc.currency)}</div>
@@ -266,7 +266,7 @@ posnext.PointOfSale.PastOrderSummary = class {
 
 print_receipt() {
 		const frm = this.events.get_frm();
-		const print_format = frm.pos_print_format;
+		const print_format = this.pos_profile.custom_sales_invoice_print_format || frm.pos_print_format;
 		const doctype = this.doc.doctype;
 		const docname = this.doc.name;
 		const letterhead = this.doc.letter_head || __("No Letterhead");
@@ -490,7 +490,7 @@ _print_via_qz(doctype, docname, print_format, letterhead, lang_code) {
 		const recipients = this.email_dialog.get_values().email_id;
 		const content = this.email_dialog.get_values().content;
 		const doc = this.doc || frm.doc;
-		const print_format = frm.pos_print_format;
+		const print_format = this.pos_profile.custom_sales_invoice_print_format || frm.pos_print_format;
 
 		frappe.call({
 			method: "frappe.core.doctype.communication.email.make",
