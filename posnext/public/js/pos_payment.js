@@ -101,7 +101,7 @@ posnext.PointOfSale.Payment = class {
             if (!fields.length) return;
 
             this.$invoice_fields = this.$invoice_fields_section.find('.invoice-fields');
-            this.$invoice_fields.empty(); // Use jQuery's empty() for consistency
+            this.$invoice_fields.empty();
             const frm = this.events.get_frm();
             this.current_payments = frm.doc.payments || [];
 
@@ -161,6 +161,9 @@ posnext.PointOfSale.Payment = class {
                     parent: this.$invoice_fields.find(`.${df.fieldname}-field`),
                     render_input: true,
                 });
+                if (df.fieldname === 'request_for_payment') {
+                    this.request_for_payment_field = this[`${df.fieldname}_field`]; // Store for contact_mobile handler
+                }
                 if (df.fieldname !== 'remarks') {
                     this[`${df.fieldname}_field`].set_value(frm.doc[df.fieldname] || '');
                 }
@@ -248,19 +251,19 @@ posnext.PointOfSale.Payment = class {
             }
         });
 
-        frappe.ui.form.on('POS Invoice', 'contact_mobile', (frm) => {
+        frappe.ui.form.on('Sales Invoice', 'contact_mobile', (frm) => {
             const contact = frm.doc.contact_mobile;
             const request_button = this.request_for_payment_field?.$input?.[0] ? $(this.request_for_payment_field.$input[0]) : null;
             if (request_button) {
                 if (contact) {
-                    requestfifteen_button.removeClass('btn-default').addClass('btn-primary');
+                    request_button.removeClass('btn-default').addClass('btn-primary');
                 } else {
                     request_button.removeClass('btn-primary').addClass('btn-default');
                 }
             }
         });
 
-        frappe.ui.form.on('POS Invoice', 'coupon_code', (frm) => {
+        frappe.ui.form.on('Sales Invoice', 'coupon_code', (frm) => {
             if (frm.doc.coupon_code && !frm.applying_pos_coupon_code) {
                 if (!frm.doc.ignore_pricing_rule) {
                     frm.applying_pos_coupon_code = true;
@@ -315,7 +318,7 @@ posnext.PointOfSale.Payment = class {
             this.events.submit_invoice();
         });
 
-        frappe.ui.form.on('POS Invoice', 'paid_amount', (frm) => {
+        frappe.ui.form.on('Sales Invoice', 'paid_amount', (frm) => {
             this.update_totals_section(frm.doc);
 
             const is_cash_shortcuts_invisible = !this.$payment_modes.find('.cash-shortcuts').is(':visible');
@@ -326,7 +329,7 @@ posnext.PointOfSale.Payment = class {
             this.render_payment_mode_dom();
         });
 
-        frappe.ui.form.on('POS Invoice', 'loyalty_amount', (frm) => {
+        frappe.ui.form.on('Sales Invoice', 'loyalty_amount', (frm) => {
             const formatted_currency = format_currency(frm.doc.loyalty_amount, frm.doc.currency);
             this.$payment_modes.find('.loyalty-amount-amount').html(formatted_currency);
         });
@@ -341,15 +344,15 @@ posnext.PointOfSale.Payment = class {
     }
 
     setup_listener_for_payments() {
-        frappe.realtime.on("process_phone_payment", ( lagetdata) => {
+        frappe.realtime.on("process_phone_payment", (data) => {
             const doc = this.events.get_frm().doc;
             const { response, amount, success, failure_message } = data;
             let message, title;
 
             if (success) {
                 title = __("Payment Received");
-                const grand_total = cint(frappe.sys_defaults.disable_rounded_total) ? doc.grand_total : doc.rounded_total;
-                if (amount >= grand_total) {
+                const outstanding_amount = doc.outstanding_amount || 0;
+                if (amount >= outstanding_amount) {
                     frappe.dom.unfreeze();
                     message = __("Payment of {0} received successfully.", [format_currency(amount, doc.currency, 0)]);
                     this.events.submit_invoice();
@@ -368,8 +371,8 @@ posnext.PointOfSale.Payment = class {
 
     auto_set_remaining_amount() {
         const doc = this.events.get_frm().doc;
-        const grand_total = cint(frappe.sys_defaults.disable_rounded_total) ? doc.grand_total : doc.rounded_total;
-        const remaining_amount = grand_total - doc.paid_amount;
+        const outstanding_amount = doc.outstanding_amount || 0;
+        const remaining_amount = outstanding_amount - doc.paid_amount;
         const current_value = this.selected_mode ? this.selected_mode.get_value() : undefined;
         if (!current_value && remaining_amount > 0 && this.selected_mode) {
             this.selected_mode.set_value(remaining_amount);
@@ -452,6 +455,7 @@ posnext.PointOfSale.Payment = class {
         }
         const $remarks = this.$totals_section.find('.remarks');
         if ($remarks.find('.frappe-control').length) {
+            $remarks.empty();
             $remarks.html('+ Add Remark');
         } else {
             $remarks.empty();
@@ -539,10 +543,10 @@ posnext.PointOfSale.Payment = class {
     }
 
     attach_cash_shortcuts(doc) {
-        const grand_total = cint(frappe.sys_defaults.disable_rounded_total) ? doc.grand_total : doc.rounded_total;
+        const outstanding_amount = doc.outstanding_amount || 0;
         const currency = doc.currency;
 
-        const shortcuts = this.get_cash_shortcuts(flt(grand_total));
+        const shortcuts = this.get_cash_shortcuts(flt(outstanding_amount));
 
         this.$payment_modes.find('.cash-shortcuts').remove();
         const shortcuts_html = shortcuts.map(s => {
@@ -553,9 +557,9 @@ posnext.PointOfSale.Payment = class {
             .after(`<div class="cash-shortcuts">${shortcuts_html}</div>`);
     }
 
-    get_cash_shortcuts(grand_total) {
+    get_cash_shortcuts(outstanding_amount) {
         let steps = [1, 5, 10];
-        const digits = String(Math.round(grand_total)).length;
+        const digits = String(Math.round(outstanding_amount)).length;
 
         steps = steps.map(x => x * (10 ** (digits - 2)));
 
@@ -565,7 +569,7 @@ posnext.PointOfSale.Payment = class {
         };
 
         return steps.reduce((finalArr, x) => {
-            let nearest_x = get_nearest(grand_total, x);
+            let nearest_x = get_nearest(outstanding_amount, x);
             nearest_x = finalArr.indexOf(nearest_x) !== -1 ? nearest_x + x : nearest_x;
             return [...finalArr, nearest_x];
         }, []);
@@ -652,8 +656,8 @@ posnext.PointOfSale.Payment = class {
             frappe.model.set_value(cur_frm.doctype, cur_frm.docname, 'branch', branch_value);
         }
         const paid_amount = doc.custom_credit_sales && this.custom_show_credit_sales ? 0 : doc.paid_amount;
-        const grand_total = cint(frappe.sys_defaults.disable_rounded_total) ? doc.grand_total : doc.rounded_total;
-        const remaining = grand_total - doc.paid_amount;
+        const outstanding_amount = doc.outstanding_amount || 0;
+        const remaining = outstanding_amount - doc.paid_amount;
         const change = doc.change_amount || remaining <= 0 ? -1 * remaining : undefined;
         const currency = doc.currency;
         const label = change ? __('Change') : __('To Be Paid');
@@ -661,7 +665,7 @@ posnext.PointOfSale.Payment = class {
         this.$totals.html(
             `<div class="col">
                 <div class="total-label">${__('Grand Total')}</div>
-                <div class="value">${format_currency(grand_total, currency)}</div>
+                <div class="value">${format_currency(doc.grand_total, currency)}</div>
             </div>
             <div class="seperator-y"></div>
             <div class="col">
