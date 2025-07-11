@@ -9,7 +9,7 @@ class ChiefCashierClosingEntry(Document):
         for row in self.closed_pos_closing_entries:
             frappe.db.set_value("POS Closing Entry", row.pce_id, "custom_closed", 1)
     def on_cancel(self):
-        # Mark POS Closing Entries as closed on cancel
+        # Mark POS Closing Entries as not closed on cancel
         for row in self.closed_pos_closing_entries:
             frappe.db.set_value("POS Closing Entry", row.pce_id, "custom_closed", 0)
 
