@@ -78,7 +78,8 @@
   },
   {
    "fieldname": "payment_summary",
-   "fieldtype": "HTML"
+   "fieldtype": "HTML",
+   "no_copy": 1
   },
   {
    "fieldname": "section_break_dioh",
@@ -98,19 +99,21 @@
    "fieldname": "payment_summary_data",
    "fieldtype": "Text Editor",
    "hidden": 1,
+   "no_copy": 1,
    "read_only": 1
   },
   {
    "fieldname": "section_break_cbss",
    "fieldtype": "Section Break",
-   "hidden": 1,
    "read_only": 1
   },
   {
    "fieldname": "closed_pos_closing_entries",
    "fieldtype": "Table",
    "label": "Closed POS Closing Entries",
-   "options": "Closed POS Closing Entry Details"
+   "no_copy": 1,
+   "options": "Closed POS Closing Entry Details",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_mzhi",
@@ -129,7 +132,6 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "0",
    "fieldname": "banked_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -172,7 +174,7 @@
    "link_fieldname": "custom_cashier_pos_closing_entry"
   }
  ],
- "modified": "2025-07-04 16:38:33.361623",
+ "modified": "2025-07-11 07:21:28.485239",
  "modified_by": "Administrator",
  "module": "Posnext",
  "name": "Chief Cashier Closing Entry",
