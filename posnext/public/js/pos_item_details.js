@@ -89,6 +89,19 @@ posnext.PointOfSale.ItemDetails = class {
 			this.currency = this.events.get_frm().doc.currency;
 
 			this.current_item = item;
+			// Auto-select warehouse with stock
+			if (item.warehouse_qty_map && Object.keys(item.warehouse_qty_map).length > 0) {
+				const available_warehouses = Object.entries(item.warehouse_qty_map).filter(([wh, qty]) => qty > 0);
+				if (available_warehouses.length > 0) {
+					item.warehouse = available_warehouses[0][0];  // pick the first one with stock
+					item.actual_qty = available_warehouses[0][1];
+				} else {
+					// fallback to first available warehouse
+					const first = Object.entries(item.warehouse_qty_map)[0];
+					item.warehouse = first[0];
+					item.actual_qty = first[1];
+				}
+			}
 
 			this.render_dom(item);
 			this.render_discount_dom(item);
@@ -247,38 +260,59 @@ posnext.PointOfSale.ItemDetails = class {
 			this.discount_percentage_control.refresh();
 		}
 
-		if (this.warehouse_control) {
-			this.warehouse_control.df.reqd = 1;
-			this.warehouse_control.df.onchange = function() {
-				if (this.value) {
-					me.events.form_updated(me.current_item, 'warehouse', this.value).then(() => {
-						me.item_stock_map = me.events.get_item_stock_map();
-						const available_qty = me.item_stock_map[me.item_row.item_code][this.value][0];
-						const is_stock_item = Boolean(me.item_stock_map[me.item_row.item_code][this.value][1]);
-						if (available_qty === undefined) {
-							me.events.get_available_stock(me.item_row.item_code, this.value).then(() => {
-								// item stock map is updated now reset warehouse
-								me.warehouse_control.set_value(this.value);
-							})
-						} else if (available_qty === 0 && is_stock_item) {
-							me.warehouse_control.set_value('');
-							const bold_item_code = me.item_row.item_code.bold();
-							const bold_warehouse = this.value.bold();
-							frappe.throw(
-								__('Item Code: {0} is not available under warehouse {1}.', [bold_item_code, bold_warehouse])
-							);
-						}
-						me.actual_qty_control.set_value(available_qty);
-					});
-				}
-			}
-			this.warehouse_control.df.get_query = () => {
-				return {
-					filters: { company: this.events.get_frm().doc.company }
-				}
-			};
-			this.warehouse_control.refresh();
-		}
+        if (this.warehouse_control) {
+            this.warehouse_control.df.reqd = 1;
+
+            this.warehouse_control.df.onchange = function () {
+                if (this.value) {
+                    me.events.form_updated(me.current_item, 'warehouse', this.value).then(() => {
+                        me.item_stock_map = me.events.get_item_stock_map();
+                        const available_qty = me.item_stock_map[me.item_row.item_code][this.value][0];
+                        const is_stock_item = Boolean(me.item_stock_map[me.item_row.item_code][this.value][1]);
+
+                        if (available_qty === undefined) {
+                            me.events.get_available_stock(me.item_row.item_code, this.value).then(() => {
+                                // item stock map is updated now reset warehouse
+                                me.warehouse_control.set_value(this.value);
+                            });
+                        } else if (available_qty === 0 && is_stock_item) {
+                            me.warehouse_control.set_value('');
+                            const bold_item_code = me.item_row.item_code.bold();
+                            const bold_warehouse = this.value.bold();
+                            frappe.throw(
+                                __('Item Code: {0} is not available under warehouse {1}.', [bold_item_code, bold_warehouse])
+                            );
+                        }
+                        me.actual_qty_control.set_value(available_qty);
+                    });
+                }
+            };
+
+            this.warehouse_control.df.get_query = () => {
+                const item_code = this.current_item.item_code;
+                const company = this.events.get_frm().doc.company;
+
+                // **Filter warehouses based on the pre-fetched warehouse_qty_map**
+                let wh_list_with_stock = [];
+                if (this.current_item.warehouse_qty_map) {
+                    wh_list_with_stock = Object.entries(this.current_item.warehouse_qty_map)
+                        .filter(([wh, qty]) => qty > 0) // Only include warehouses with positive quantity
+                        .map(([wh]) => wh);
+                }
+
+                return {
+                    query: "erpnext.controllers.queries.warehouse_query",
+                    filters: {
+                        company: company,
+                        is_group: 0,
+                        item_code: item_code,
+                        ...(wh_list_with_stock.length && { name: ['in', wh_list_with_stock] })
+                    }
+                };
+            };
+
+            this.warehouse_control.refresh();
+        }
 
 		if (this.serial_no_control) {
 			this.serial_no_control.df.reqd = 1;

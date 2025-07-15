@@ -4,16 +4,15 @@ from erpnext.accounts.doctype.pos_invoice.pos_invoice import get_bin_qty,get_bun
 @frappe.whitelist()
 def get_stock_availability(item_code, warehouse):
 	if not frappe.db.exists("Item", item_code):
-		return 0, False
+		return {}, False
 
 	is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item")
 	if not is_stock_item:
-		# Not a stock item
 		if frappe.db.exists("Product Bundle", {"name": item_code, "disabled": 0}):
-			return get_bundle_availability(item_code, warehouse), True
-		return 0, False
+			# You can implement a similar breakdown for bundles if needed
+			return {}, True
+		return {}, False
 
-	# Stock item case
 	is_group = frappe.db.get_value("Warehouse", warehouse, "is_group")
 	if is_group:
 		lft, rgt = frappe.db.get_value("Warehouse", warehouse, ["lft", "rgt"])
@@ -26,9 +25,11 @@ def get_stock_availability(item_code, warehouse):
 	else:
 		child_warehouses = [warehouse]
 
-	total_qty = 0
+	# Get qty per warehouse
+	qty_map = {}
 	for wh in child_warehouses:
 		qty = get_bin_qty(item_code, wh)
-		total_qty += qty or 0
+		if qty:
+			qty_map[wh] = qty
 
-	return total_qty, True
+	return qty_map, True

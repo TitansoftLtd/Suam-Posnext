@@ -220,7 +220,9 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 			["uom"],
 			pluck="uom"
 		)
-		item.actual_qty, _ = get_stock_availability(item.item_code, warehouse)
+		
+		qty_map, _ = get_stock_availability(item.item_code, warehouse)
+		item["warehouse_qty_map"] = qty_map
 		item.uom = item.stock_uom
 
 		item_price = frappe.get_all(
